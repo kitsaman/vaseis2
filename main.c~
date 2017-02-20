@@ -1,0 +1,26 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include "BF.h"
+#define fileName "heapFile"
+
+
+int main(int argc, char **argv) {
+    
+	if(argc>2) {
+		printf("Incorrect arguments\n");
+		exit(EXIT_FAILURE);
+	}
+
+	FILE *fp;
+	char *token;
+	char line[256];
+
+	Record record;
+	HT_info* info;
+	BF_Init();
+    
+    
+	return EXIT_SUCCESS;
+}
