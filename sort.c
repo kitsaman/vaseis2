@@ -308,7 +308,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   						rightEnd = 1;
   				}
   				else {
-  					if((searchBlock + k) != lastBlock) {
+  					if((searchBlock + k) != lastBlock + 1) {
   						add_to_array(blocksArray,searchBlock + k);
   						tempRecordInBlock = 0;
   						if(BF_ReadBlock(fileDesc,searchBlock + k,&block) < 0) {
@@ -400,7 +400,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   						rightEnd = 1;
   				}
   				else {
-  					if((searchBlock + k) != lastBlock) {
+  					if((searchBlock + k) != lastBlock + 1) {
   						add_to_array(blocksArray,searchBlock + k);
   						tempRecordInBlock = 0;
   						if(BF_ReadBlock(fileDesc,searchBlock + k,&block) < 0) {
@@ -492,7 +492,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   						rightEnd = 1;
   				}
   				else {
-  					if((searchBlock + k) != lastBlock) {
+  					if((searchBlock + k) != lastBlock + 1) {
   						add_to_array(blocksArray,searchBlock + k);
   						tempRecordInBlock = 0;
   						if(BF_ReadBlock(fileDesc,searchBlock + k,&block) < 0) {
@@ -584,7 +584,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   						rightEnd = 1;
   				}
   				else {
-  					if((searchBlock + k) != lastBlock) {
+  					if((searchBlock + k) != lastBlock + 1) {
   						add_to_array(blocksArray,searchBlock + k);
   						tempRecordInBlock = 0;
   						if(BF_ReadBlock(fileDesc,searchBlock + k,&block) < 0) {

@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 	char *token;
 	char line[256];
 	int fieldNo = 0;
-	int value = 6;
+	int value = 32;
 	//char value[20];
 	//strcpy(value, "Keratsini");
 
