@@ -137,7 +137,185 @@ int Sorted_InsertEntry(int fileDesc,Record Record) {
 }
 
 void Sorted_SortFile(char *fileName,int fieldNo) {
+	int fileDesc, blocks, recordsinLastBlock;
+	char finalfile[strlen(fileName)+8],intString[2];
+	void *block;
+	Sorted_Info finfo;
+	strcpy(finalfile,fileName);
+	strcat(finalfile,"Sorted");
+	sprintf(intString,"%d",fieldNo);
+	strcat(finalfile,intString);
+	fileDesc = BF_OpenFile(fileName);
+	if(fileDesc < 0) {
+		BF_PrintError("Could not open file\n");
+  		return;
+	}
+	if(BF_ReadBlock(fileDesc,0,&block) < 0) {
+ 	 	BF_PrintError("Could not read block\n");
+  		return;
+  	}
+  	memcpy(&finfo,block,sizeof(Sorted_Info));
+  	memcpy(&blocks,block + 2 * sizeof(int),sizeof(int));
+  	blocks--;
+  	memcpy(&recordsinLastBlock,block + 3 * sizeof(int),sizeof(int));
+  	Bubble_Sort(fileDesc,fileName,fieldNo,blocks,recordsinLastBlock);
+  	if(BF_CloseFile(fileDesc) < 0) {
+ 	 	BF_PrintError("Could not close file\n");
+  		return;
+  	}
+  	if(BF_CreateFile(finalfile) < 0) {
+ 	 	BF_PrintError("Could not create file\n");
+  		return;
+  	}
+  	fileDesc = BF_OpenFile(finalfile);
+  	if(fileDesc < 0) {
+ 	 	BF_PrintError("Could not open file\n");
+  		return;
+  	}
+  	if(BF_AllocateBlock(fileDesc) < 0) {
+  		BF_PrintError("Could not allocate block\n");
+  		return;
+  	}
+  	if(BF_ReadBlock(fileDesc,0,&block) < 0) {
+ 	 	BF_PrintError("Could not read block\n");
+  		return;
+  	}
+  	finfo.isSorted = 1;
+  	finfo.fieldNo = fieldNo;
+  	memcpy(block,&finfo,sizeof(Sorted_Info));
+  	if(BF_WriteBlock(fileDesc,0)) {
+  		BF_PrintError("Could not write block\n");
+  		return;
+  	}
+}
 
+void Bubble_Sort(int fileDesc, char *fileName, int fieldNo, int initialBlocks, int recordsinLastBlock) {
+	int i, j, k, newFileDesc;
+	int maxRecords = BLOCK_SIZE / sizeof(Record);
+	void *oldblock, *newblock;
+	char intString[2];
+	char tempfile[strlen(fileName)+1];
+	char newfile[strlen(tempfile)+1];
+	Record r1, r2 ,tempRecord;
+	strcpy(tempfile,fileName);
+	strcat(tempfile,"0");
+	for(i = 0 ; i < initialBlocks ; i++) {
+		if(i == initialBlocks -1)
+			maxRecords = recordsinLastBlock;
+		if(BF_ReadBlock(fileDesc,i+1,&oldblock) < 0) {
+  			BF_PrintError("Could not read block\n");
+  			return;
+  		}
+		strcpy(newfile,tempfile);
+		sprintf(intString,"%d",i);
+		strcat(newfile,intString);
+		if(BF_CreateFile(newfile) < 0) {
+ 	 		BF_PrintError("Could not create file\n");
+  			return;
+  		}
+  		newFileDesc = BF_OpenFile(newfile);
+  		if(newFileDesc < 0) {
+  			BF_PrintError("Could not open file\n");
+  			return;
+  		}
+  		if(BF_AllocateBlock(newFileDesc) < 0) {
+  			BF_PrintError("Could not allocate block\n");
+  			return;
+  		}
+  		if(BF_ReadBlock(newFileDesc,0,&newblock) < 0) {
+  			BF_PrintError("Could not read block\n");
+  			return;
+  		}
+  		memcpy(newblock,oldblock,BLOCK_SIZE);
+  		if(fieldNo == 0) {
+  			for(j = 0 ; j < maxRecords-1 ; j++) {
+  				int swapped = 0;
+  				for(k = 0 ; k < maxRecords-1-j; k++) {
+  					memcpy(&r1,newblock + k * sizeof(Record),sizeof(Record));
+  					memcpy(&r2,newblock + (k+1) * sizeof(Record),sizeof(Record));
+  					if(r1.id > r2.id) {
+  						memcpy(&tempRecord,&r1,sizeof(Record));
+  						memcpy(newblock + k * sizeof(Record),&r2,sizeof(Record));
+  						memcpy(newblock + (k+1) * sizeof(Record),&tempRecord,sizeof(Record));
+  						swapped = 1;
+  					}
+  				}
+
+  				if(swapped == 0)
+  					break;
+  			}
+  		}
+  		if(fieldNo == 1) {
+  			for(j = 0 ; j < maxRecords-1 ; j++) {
+  				int swapped = 0;
+  				for(k = 0 ; k < maxRecords-1-j; k++) {
+  					memcpy(&r1,newblock + k * sizeof(Record),sizeof(Record));
+  					memcpy(&r2,newblock + (k+1) * sizeof(Record),sizeof(Record));
+  					if(strcmp(r1.name,r2.name) > 0) {
+  						memcpy(&tempRecord,&r1,sizeof(Record));
+  						memcpy(newblock + k * sizeof(Record),&r2,sizeof(Record));
+  						memcpy(newblock + (k+1) * sizeof(Record),&tempRecord,sizeof(Record));
+  						swapped = 1;
+  					}
+  				}
+
+  				if(swapped == 0)
+  					break;
+  			}
+  		}
+  		if(fieldNo == 2) {
+  			for(j = 0 ; j < maxRecords-1 ; j++) {
+  				int swapped = 0;
+  				for(k = 0 ; k < maxRecords-1-j; k++) {
+  					memcpy(&r1,newblock + k * sizeof(Record),sizeof(Record));
+  					memcpy(&r2,newblock + (k+1) * sizeof(Record),sizeof(Record));
+  					if(strcmp(r1.surname,r2.surname) > 0) {
+  						memcpy(&tempRecord,&r1,sizeof(Record));
+  						memcpy(newblock + k * sizeof(Record),&r2,sizeof(Record));
+  						memcpy(newblock + (k+1) * sizeof(Record),&tempRecord,sizeof(Record));
+  						swapped = 1;
+  					}
+  				}
+
+  				if(swapped == 0)
+  					break;
+
+  			}
+  		}
+  		if(fieldNo == 3) {
+  			for(j = 0 ; j < maxRecords-1 ; j++) {
+  				int swapped = 0;
+  				for(k = 0 ; k < maxRecords-1-j; k++) {
+  					memcpy(&r1,newblock + k * sizeof(Record),sizeof(Record));
+  					memcpy(&r2,newblock + (k+1) * sizeof(Record),sizeof(Record));
+  					if(strcmp(r1.city,r2.city) > 0) {
+  						memcpy(&tempRecord,&r1,sizeof(Record));
+  						memcpy(newblock + k * sizeof(Record),&r2,sizeof(Record));
+  						memcpy(newblock + (k+1) * sizeof(Record),&tempRecord,sizeof(Record));
+  						swapped = 1;
+  					}
+  				}
+
+  				if(swapped == 0)
+  					break;
+
+  			}
+  		}
+  		printf("Gia to arxeio me onoma %s exoume :\n", newfile);
+  		for(j=0;j<maxRecords;j++)
+  		{
+  			memcpy(&r1,newblock + j*sizeof(Record),sizeof(Record));
+  			print_record(r1);
+  		}
+  		if(BF_WriteBlock(newFileDesc,0)) {
+  			BF_PrintError("Could not write block\n");
+  			return;
+  		}
+  		if(BF_CloseFile(newFileDesc) < 0) {
+ 	 		BF_PrintError("Could not close file\n");
+  			return;
+  		}
+	}
 }
 
 int Sorted_checkSortedFile(char *fileName,	int fieldNo) {
@@ -242,7 +420,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   	printf("Checking block %d\n", searchBlock);
   	if(fieldNo == 0) {
   		int idValue = *((int *) value);
-  		int leftShift = 0;
+  		int leftShift = 0, rightShift = 0;
   		memcpy(&tempRecord,block + (recordInBlock * sizeof(Record)),sizeof(Record));
   		if(idValue < tempRecord.id)
   			binary_search(firstRecord,midRecord - 1,foundRecords,fileDesc,fieldNo,value,lastBlock,recordsinLastBlock,maxRecords,blocksArray);
@@ -299,6 +477,8 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   			while(rightEnd == 0) {
   				if(tempRecordInBlock < 7) {
   					tempRecordInBlock++;
+  					if(rightShift == 1 && searchBlock + k - 1 == lastBlock && tempRecordInBlock == recordsinLastBlock)
+  						break;
   					memcpy(&tempRecord,block + (tempRecordInBlock * sizeof(Record)),sizeof(Record));
   					if(tempRecord.id == idValue) {
   						print_record(tempRecord);
@@ -316,6 +496,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   							return;
   						}
   						printf("Checking additional right block %d\n", searchBlock + k);
+  						rightShift = 1;
   						k++;
   						memcpy(&tempRecord,block + (tempRecordInBlock * sizeof(Record)),sizeof(Record));
   						if(tempRecord.id == idValue) {
@@ -332,7 +513,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   		}
   	}
   	else if(fieldNo == 1) {
-  		int leftShift = 0;
+  		int leftShift = 0, rightShift = 0;
   		char strValue[20];
   		strcpy(strValue,value);
   		memcpy(&tempRecord,block + (recordInBlock * sizeof(Record)),sizeof(Record));
@@ -391,6 +572,8 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   			while(rightEnd == 0) {
   				if(tempRecordInBlock < 7) {
   					tempRecordInBlock++;
+  					if(rightShift == 1 && searchBlock + k - 1 == lastBlock && tempRecordInBlock == recordsinLastBlock)
+  						break;
   					memcpy(&tempRecord,block + (recordInBlock * sizeof(Record)),sizeof(Record));
   					if(strcmp(tempRecord.name,strValue) == 0) {
   						print_record(tempRecord);
@@ -408,6 +591,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   							return;
   						}
   						printf("Checking additional right block %d\n", searchBlock + k);
+  						rightShift = 1;
   						k++;
   						memcpy(&tempRecord,block + (recordInBlock * sizeof(Record)),sizeof(Record));
   						if(strcmp(tempRecord.name,strValue) == 0){
@@ -424,7 +608,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   		}
   	}
   	else if(fieldNo == 2) {
-  		int leftShift = 0;
+  		int leftShift = 0, rightShift = 0;
   		char strValue[20];
   		strcpy(strValue,value);
   		memcpy(&tempRecord,block + (recordInBlock * sizeof(Record)),sizeof(Record));
@@ -483,6 +667,8 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   			while(rightEnd == 0) {
   				if(tempRecordInBlock < 7) {
   					tempRecordInBlock++;
+  					if(rightShift == 1 && searchBlock + k - 1 == lastBlock && tempRecordInBlock == recordsinLastBlock)
+  						break;
   					memcpy(&tempRecord,block + (recordInBlock * sizeof(Record)),sizeof(Record));
   					if(strcmp(tempRecord.surname,strValue) == 0) {
   						print_record(tempRecord);
@@ -500,6 +686,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   							return;
   						}
   						printf("Checking additional right block %d\n", searchBlock + k);
+  						rightShift = 1;
   						k++;
   						memcpy(&tempRecord,block + (recordInBlock * sizeof(Record)),sizeof(Record));
   						if(strcmp(tempRecord.surname,strValue) == 0) {
@@ -516,7 +703,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   		}
   	}
   	else if(fieldNo == 3) {
-  		int leftShift = 0;
+  		int leftShift = 0, rightShift = 0;
   		char strValue[20];
   		strcpy(strValue,value);
   		memcpy(&tempRecord,block + (recordInBlock * sizeof(Record)),sizeof(Record));
@@ -575,6 +762,8 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   			while(rightEnd == 0) {
   				if(tempRecordInBlock < 7) {
   					tempRecordInBlock++;
+  					if(rightShift == 1 && searchBlock + k - 1 == lastBlock && tempRecordInBlock == recordsinLastBlock)
+  						break;
   					memcpy(&tempRecord,block + (recordInBlock * sizeof(Record)),sizeof(Record));
   					if(strcmp(tempRecord.city,strValue) == 0) {
   						print_record(tempRecord);
@@ -592,6 +781,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   							return;
   						}
   						printf("Checking additional right block %d\n", searchBlock + k);
+  						rightShift = 1;
   						k++;
   						memcpy(&tempRecord,block + (recordInBlock * sizeof(Record)),sizeof(Record));
   						if(strcmp(tempRecord.city,strValue) == 0) {

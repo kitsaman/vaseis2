@@ -16,8 +16,8 @@ int main(int argc, char **argv) {
 	FILE *fp;
 	char *token;
 	char line[256];
-	int fieldNo = 0;
-	int value = 32;
+	int fieldNo = 1;
+	//int value = 6;
 	//char value[20];
 	//strcpy(value, "Keratsini");
 
@@ -54,9 +54,10 @@ int main(int argc, char **argv) {
 		    }
 		}
 	}
-
-	Sorted_checkSortedFile("shitsort", 1);
-	Sorted_GetAllEntries(fd,&fieldNo,&value);
+	Sorted_SortFile("shitsort",fieldNo);
+	Sorted_checkSortedFile("shitsort", fieldNo);
+	//Sorted_checkSortedFile("shitsortSorted0", fieldNo);
+	//Sorted_GetAllEntries(fd,&fieldNo,&value);
     
     return 1;
 
