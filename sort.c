@@ -159,7 +159,6 @@ int Sorted_InsertEntry(int fileDesc,Record Record) {
 			BF_PrintError("Could not write to block\n");
   			return -1;
 		}
-		printf("Inserted record in block %d that now has %d records\n",tempBlock,++tempRecord);
 	}
 	else {
 		info.lastBlock++;
@@ -188,10 +187,10 @@ int Sorted_InsertEntry(int fileDesc,Record Record) {
 }
 
 void Sorted_SortFile(char *fileName,int fieldNo) {
-	int fileDesc, blocks, recordsinLastBlock, perasmata = 1, i;
+	int fileDesc, blocks, recordsinLastBlock, perasmata = 0, i = 0;
 	char finalfile[strlen(fileName)+8],intString[2];
 	void *block;
-	Sorted_Info finfo;
+	Sorted_Info finfo, new_finfo;
 	strcpy(finalfile,fileName);
 	strcat(finalfile,"Sorted");
 	sprintf(intString,"%d",fieldNo);
@@ -206,9 +205,9 @@ void Sorted_SortFile(char *fileName,int fieldNo) {
   		return;
   	}
   	memcpy(&finfo,block,sizeof(Sorted_Info));
-  	memcpy(&blocks,block + 2 * sizeof(int),sizeof(int));
-  	blocks--;
-  	memcpy(&recordsinLastBlock,block + 3 * sizeof(int),sizeof(int));
+  	blocks = finfo.lastBlock;
+  	//blocks--;
+  	recordsinLastBlock = finfo.recordsinLastBlock;
   	Bubble_Sort(fileDesc,fileName,fieldNo,blocks,recordsinLastBlock);
   	if(BF_CloseFile(fileDesc) < 0) {
  	 	BF_PrintError("Could not close file\n");
@@ -218,10 +217,56 @@ void Sorted_SortFile(char *fileName,int fieldNo) {
   		perasmata++;
   		i = pow(2,perasmata);
   	}
-  	printf("XREIAZETAI %d perasmata\n", perasmata);
+  	printf("XREIAZETAI %d perasmata\n\n", perasmata);
+  	int fd1, fd2, fd3, oldfile, newfile;
   	i = 1;
   	while(i < perasmata) {
-  		//kane merge sort
+  		printf("PERASMA %d\n\n", i);
+  		oldfile = 0;
+  		newfile = 0;
+  		while(oldfile < blocks) {
+  			//Creating the name of the files to be read
+  			//printf("OLDFILE %d BLOCKS %d\n",oldfile,blocks);
+  			char temp1[strlen(fileName)+8];
+  			char temp2[strlen(fileName)+8];
+  			strcpy(temp1,fileName);
+  			strcpy(temp2,fileName);
+  			sprintf(intString,"%d",i-1);
+  			strcat(temp1,intString);
+  			strcat(temp2,intString);
+  			sprintf(intString,"%d",oldfile);
+  			strcat(temp1,intString);
+  			fd1 = BF_OpenFile(temp1);
+  			oldfile++;
+  			if(oldfile < blocks) {
+  				sprintf(intString,"%d",oldfile);
+  				strcat(temp2,intString);
+  				fd2 = BF_OpenFile(temp2);
+  				oldfile++;
+  			}
+  			else {
+  				strcpy(temp2,"BLAAAA");
+  				fd2 = -5;
+  			}
+  			//Creating the name of the file to write in
+  			char temp3[strlen(fileName)+8];
+  			strcpy(temp3,fileName);
+  			sprintf(intString,"%d",i);
+  			strcat(temp3,intString);
+  			sprintf(intString,"%d",newfile);
+  			strcat(temp3,intString);
+  			BF_CreateFile(temp3);
+  			fd3 = BF_OpenFile(temp3);
+  			newfile++;
+  			printf("THA DIAVASW TA ARXEIA: %s , %s KAI THA PARW: %s\n\n",temp1,temp2,temp3);
+  			//kane merge sort pernontas ta fd
+  			BF_CloseFile(fd1);
+  			BF_CloseFile(fd2);
+  			BF_CloseFile(fd3);
+  		}
+  		blocks = newfile;
+  		printf("TWRA EXOUME %d arxeia\n\n\n",blocks);
+  		i++;
   	}
 
 
@@ -243,14 +288,56 @@ void Sorted_SortFile(char *fileName,int fieldNo) {
  	 	BF_PrintError("Could not read block\n");
   		return;
   	}
-  	finfo.isSorted = 1;
-  	finfo.fieldNo = fieldNo;
-  	memcpy(block,&finfo,sizeof(Sorted_Info));
+  	new_finfo.isSorted = 1;
+  	new_finfo.fieldNo = fieldNo;
+  	new_finfo.lastBlock = finfo.lastBlock;
+  	new_finfo.recordsinLastBlock = finfo.recordsinLastBlock;
+  	memcpy(block,&new_finfo,sizeof(Sorted_Info));
   	if(BF_WriteBlock(fileDesc,0)) {
   		BF_PrintError("Could not write block\n");
   		return;
   	}
+
+
+
+
+  	if(BF_CloseFile(fileDesc) < 0) {
+ 	 	BF_PrintError("Could not close file\n");
+  		return;
+  	}
 }
+
+
+void Merge_Sort(int fd1, int fd2, int fd3) {
+	if(fd2 == -5) {
+		int totalBlocks, i;
+		void *block, *new_block;
+		if(BF_ReadBlock(fd1,0,&block) < 0) {
+ 	 		BF_PrintError("Could not read block\n");
+  			return;
+  		}
+  		memcpy(&totalBlocks,block + 2*sizeof(int),sizeof(int));
+  		for(i = 0; i <= totalBlocks; i++) {
+  			if(BF_ReadBlock(fd1,i,&block) < 0) {
+ 	 			BF_PrintError("Could not read block\n");
+  				return;
+  			}
+  			if(BF_ReadBlock(fd3,i,&new_block) < 0) {
+ 	 			BF_PrintError("Could not read block\n");
+  				return;
+  			}
+  			memcpy(new_block,block,BLOCK_SIZE);
+  			if(BF_WriteBlock(fd3,i)) {
+  				BF_PrintError("Could not write block\n");
+  				return;
+  			}
+  		}
+	}
+	else {
+
+	}
+}
+
 
 void Bubble_Sort(int fileDesc, char *fileName, int fieldNo, int initialBlocks, int recordsinLastBlock) {
 	int i, j, k, newFileDesc;
@@ -262,8 +349,8 @@ void Bubble_Sort(int fileDesc, char *fileName, int fieldNo, int initialBlocks, i
 	Record r1, r2 ,tempRecord;
 	strcpy(tempfile,fileName);
 	strcat(tempfile,"0");
-	for(i = 0 ; i <= initialBlocks ; i++) {
-		if(i == initialBlocks -1)
+	for(i = 0 ; i < initialBlocks ; i++) {
+		if(i == initialBlocks - 1)
 			maxRecords = recordsinLastBlock;
 		if(BF_ReadBlock(fileDesc,i+1,&oldblock) < 0) {
   			BF_PrintError("Could not read block\n");
@@ -478,7 +565,7 @@ void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileD
   		return;
   	}
   	add_to_array(blocksArray,searchBlock);
-  	printf("Checking block %d\n", searchBlock);
+  	printf("Checking block %d record n. %d\n", searchBlock,midRecord);
   	if(fieldNo == 0) {
   		int idValue = *((int *) value);
   		int leftShift = 0, rightShift = 0;

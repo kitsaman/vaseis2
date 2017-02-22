@@ -45,6 +45,7 @@ void Sorted_GetAllEntries(
 	void *value							/* τιμή του πεδίου προς σύγκριση */ );
 
 void binary_search(int firstRecord, int lastRecord, int* foundRecords, int fileDesc, int fieldNo, void* value, int lastBlock, int recordsinLastBlock, int maxRecords, int blocksArray[]);
+void Merge_Sort(int fd1, int fd2, int fd3);
 void Bubble_Sort(int fileDesc, char *fileName, int fieldNo, int initialBlocks, int recordsinLastBlock);
 
 void add_to_array(int blocksArray[], int element);
