@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "BF.h"
 #include "sort.h"
 
@@ -132,12 +133,62 @@ int insertEntry(int fileDesc,Record Record) {
 }
 
 int Sorted_InsertEntry(int fileDesc,Record Record) {
-
+	int maxRecords = BLOCK_SIZE/sizeof(Record);
+	void* block;
+	Sorted_Info info; 
+	if(BF_ReadBlock(fileDesc,0,&block)<0) {
+ 	 	BF_PrintError("Could not read block\n");
+  		return -1;
+  	}
+  	memcpy(&info,block,sizeof(Sorted_Info));
+  	if(info.recordsinLastBlock < maxRecords) {
+		int tempBlock = info.lastBlock;
+		int tempRecord = info.recordsinLastBlock;
+		info.recordsinLastBlock++;
+		memcpy(block,&info,sizeof(Sorted_Info));
+		if(BF_WriteBlock(fileDesc,0)) {
+			BF_PrintError("Could not write to block\n");
+  			return -1;
+		}
+		if(BF_ReadBlock(fileDesc,tempBlock,&block)<0) {
+ 	 		BF_PrintError("Could not read block\n");
+  			return -1;
+  		}
+  		memcpy(block+tempRecord*sizeof(Record),&Record,sizeof(Record));
+  		if(BF_WriteBlock(fileDesc,tempBlock)) {
+			BF_PrintError("Could not write to block\n");
+  			return -1;
+		}
+		printf("Inserted record in block %d that now has %d records\n",tempBlock,++tempRecord);
+	}
+	else {
+		info.lastBlock++;
+		info.recordsinLastBlock = 1;
+		int tempBlock = info.lastBlock;
+		memcpy(block,&info,sizeof(Sorted_Info));
+		if(BF_WriteBlock(fileDesc,0)) {
+			BF_PrintError("Could not write to block\n");
+  			return -1;
+		}
+		if(BF_AllocateBlock(fileDesc) < 0) {
+  			BF_PrintError("Could not allocate block\n");
+  			return -1;
+  		}
+  		if(BF_ReadBlock(fileDesc,tempBlock,&block)<0) {
+ 	 		BF_PrintError("Could not read block\n");
+  			return -1;
+  		}
+  		memcpy(block,&Record,sizeof(Record));
+  		if(BF_WriteBlock(fileDesc,tempBlock)) {
+			BF_PrintError("Could not write to block\n");
+  			return -1;
+		}
+	}
 	return 0;
 }
 
 void Sorted_SortFile(char *fileName,int fieldNo) {
-	int fileDesc, blocks, recordsinLastBlock;
+	int fileDesc, blocks, recordsinLastBlock, perasmata = 1, i;
 	char finalfile[strlen(fileName)+8],intString[2];
 	void *block;
 	Sorted_Info finfo;
@@ -163,6 +214,18 @@ void Sorted_SortFile(char *fileName,int fieldNo) {
  	 	BF_PrintError("Could not close file\n");
   		return;
   	}
+  	while(i < blocks) {
+  		perasmata++;
+  		i = pow(2,perasmata);
+  	}
+  	printf("XREIAZETAI %d perasmata\n", perasmata);
+  	i = 1;
+  	while(i < perasmata) {
+  		//kane merge sort
+  	}
+
+
+  	//Edw na ginei to teleutaio merge sort sto teliko arxeio apo ta arxeia "filename(--i)0" kai "filename(--i)1"
   	if(BF_CreateFile(finalfile) < 0) {
  	 	BF_PrintError("Could not create file\n");
   		return;
@@ -199,7 +262,7 @@ void Bubble_Sort(int fileDesc, char *fileName, int fieldNo, int initialBlocks, i
 	Record r1, r2 ,tempRecord;
 	strcpy(tempfile,fileName);
 	strcat(tempfile,"0");
-	for(i = 0 ; i < initialBlocks ; i++) {
+	for(i = 0 ; i <= initialBlocks ; i++) {
 		if(i == initialBlocks -1)
 			maxRecords = recordsinLastBlock;
 		if(BF_ReadBlock(fileDesc,i+1,&oldblock) < 0) {
@@ -328,7 +391,7 @@ int Sorted_checkSortedFile(char *fileName,	int fieldNo) {
   		return -1;
 	}
 	if(BF_ReadBlock(fileDesc,0,&block) < 0) {
- 	 	BF_PrintError("Could not read block\n");
+ 	 	printf("File with name %s is NOT Sorted\n", fileName);
   		return -1;
   	}
   	memcpy(&info,block,sizeof(Sorted_Info));
@@ -390,8 +453,6 @@ void Sorted_GetAllEntries(int fileDesc,int* fieldNo,void *value) {
 			blocksArray[l] = 0;
 		totalRecords = ((lastBlock - 1) * maxRecords) + recordsinLastBlock;
 		binary_search(0,totalRecords,&foundRecords,fileDesc,*fieldNo,value,lastBlock,recordsinLastBlock,maxRecords,blocksArray);
-		for(l=0;l<=(lastBlock/2)+1;l++)
-			printf("Element in array position %d : %d\n",l,blocksArray[l]);
 		printf("\nChecked %d blocks and found %d records\n\n",array_size(blocksArray),foundRecords);
 	}
 }

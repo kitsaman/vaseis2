@@ -12,19 +12,26 @@ int main(int argc, char **argv) {
 		printf("Incorrect arguments\n");
 		exit(EXIT_FAILURE);
 	}
-	int fd;
+	int fd, fd2;
+	int fieldNo = 0;
+	//int value = 13927231;
+	//char value[20];
+	//strcpy(value, "Keratsini");
 	FILE *fp;
 	char *token;
 	char line[256];
-	int fieldNo = 1;
-	//int value = 6;
-	//char value[20];
-	//strcpy(value, "Keratsini");
+	char filename[30] = "shitsort";
+	char newFilename[40];
+	strcpy(newFilename,filename);
+	strcat(newFilename,"Sorted");
+	char intString[2];
+	sprintf(intString,"%d",fieldNo);
+	strcat(newFilename,intString);
 
 	Record record;
 	BF_Init();
-	Sorted_CreateFile("shitsort");
-	fd = Sorted_OpenFile("shitsort");
+	Sorted_CreateFile(filename);
+	fd = Sorted_OpenFile(filename);
 
 	if(argc == 2) {
 		fp = fopen(argv[1],"r");
@@ -54,10 +61,12 @@ int main(int argc, char **argv) {
 		    }
 		}
 	}
-	Sorted_SortFile("shitsort",fieldNo);
-	Sorted_checkSortedFile("shitsort", fieldNo);
-	//Sorted_checkSortedFile("shitsortSorted0", fieldNo);
-	//Sorted_GetAllEntries(fd,&fieldNo,&value);
+	Sorted_SortFile(filename,fieldNo);
+	Sorted_checkSortedFile(filename, fieldNo);
+	Sorted_checkSortedFile(newFilename, fieldNo);
+
+	//fd2 = Sorted_OpenFile(newFilename);
+	//Sorted_GetAllEntries(fd2,&fieldNo,&value);
     
     return 1;
 
